@@ -103,7 +103,7 @@ export const App = memo(() => {
           ...prevEvents,
           {
             ...testEvent,
-            delay: last(prevEvents)?.timeStamp || 0,
+            delay: prevEvents.length > 0 ? testEvent.timeStamp - last(prevEvents)!.timeStamp : 0,
           },
         ]);
       } else {
@@ -111,7 +111,7 @@ export const App = memo(() => {
           ...prevEvents,
           {
             ...testEvent,
-            delay: last(prevEvents)?.timeStamp || 0,
+            delay: prevEvents.length > 0 ? testEvent.timeStamp - last(prevEvents)!.timeStamp : 0,
           },
         ]);
       }
