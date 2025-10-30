@@ -1,7 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { Box, Button, Group, MantineProvider, Paper, Stack, Table, TextInput } from "@mantine/core";
 import { EventRow } from "./EventRow";
-import { useInputState } from "@mantine/hooks";
 
 const eventTypes: (keyof HTMLElementEventMap)[] = [
   "keydown",
@@ -13,7 +12,6 @@ const eventTypes: (keyof HTMLElementEventMap)[] = [
 ];
 
 export const App = memo(() => {
-  const [value, setValue] = useInputState("");
   const [events, setEvents] = useState<KeyboardEvent[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -38,6 +36,9 @@ export const App = memo(() => {
 
   const handleClear = () => {
     setEvents([]);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
   };
 
   return (
@@ -46,7 +47,7 @@ export const App = memo(() => {
         <Paper withBorder p="md">
           <Stack>
             <Group>
-              <TextInput id="input" flex={1} placeholder="Type here" ref={inputRef} value={value} onChange={setValue} />
+              <TextInput id="input" flex={1} placeholder="Type here" ref={inputRef} />
               <Button color="red" onClick={handleClear}>
                 Clear
               </Button>
