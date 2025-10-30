@@ -44,7 +44,7 @@ export const EventRow = memo(({ index, event, userEvent }: EventRowProps) => {
         return (
           <Table.Td key={key}>
             <Tooltip
-              hidden={value === userValue}
+              hidden={value === userValue || key === "timeStamp"}
               color="dark"
               withArrow
               label={
@@ -57,7 +57,7 @@ export const EventRow = memo(({ index, event, userEvent }: EventRowProps) => {
                 </Group>
               }
             >
-              <Badge color={value !== userValue ? "red" : "gray"}>{value}</Badge>
+              <Badge color={value !== userValue && key !== "timeStamp" ? "red" : "gray"}>{value}</Badge>
             </Tooltip>
           </Table.Td>
         );
