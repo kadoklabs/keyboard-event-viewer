@@ -39,7 +39,7 @@ export const EventRow = memo(({ index, event, userEvent }: EventRowProps) => {
       <Table.Td>{index + 1}</Table.Td>
       {sortedKeys.map((key) => {
         const value = formatEventValue(key, event[key]);
-        const userValue = formatEventValue(key, get(userEvent, key, value));
+        const userValue = formatEventValue(key, get(userEvent, key, event[key]));
 
         return (
           <Table.Td key={key}>
