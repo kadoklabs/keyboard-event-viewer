@@ -1,5 +1,5 @@
 import { Badge, Group, Table, Text, Tooltip } from "@mantine/core";
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { get } from "lodash-es";
 import type { TestEvent } from "./App";
 
@@ -27,19 +27,6 @@ const sortedKeys = [
 ] as (keyof TestEvent)[];
 
 export const EventRow = memo(({ index, event, userEvent }: EventRowProps) => {
-  const invalidKeys = useMemo(() => {
-    if (!userEvent) return [];
-
-    return sortedKeys.filter((key) => {
-      if (key === "timeStamp") return false;
-      if (key === "delay") {
-        return get(userEvent, key) - get(event, key) > 10;
-      }
-
-      return get(event, key) !== get(userEvent, key);
-    });
-  }, [event, userEvent]);
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formatEventValue = (key: string, value: any) => {
     if (["timeStamp", "delay"].includes(key)) return value.toFixed(2);
@@ -52,7 +39,7 @@ export const EventRow = memo(({ index, event, userEvent }: EventRowProps) => {
       <Table.Td>{index + 1}</Table.Td>
       {sortedKeys.map((key) => {
         const value = formatEventValue(key, event[key]);
-        const userValue = userEvent ? formatEventValue(key, userEvent[key]) : null;
+        const userValue = formatEventValue(key, get(userEvent, key, value));
 
         return (
           <Table.Td key={key}>
@@ -70,7 +57,7 @@ export const EventRow = memo(({ index, event, userEvent }: EventRowProps) => {
                 </Group>
               }
             >
-              <Badge color={invalidKeys.includes(key) ? "red" : "gray"}>{value}</Badge>
+              <Badge color={value !== userValue ? "red" : "gray"}>{value}</Badge>
             </Tooltip>
           </Table.Td>
         );
