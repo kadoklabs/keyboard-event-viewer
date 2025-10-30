@@ -79,7 +79,7 @@ export const App = memo(() => {
     const listener = (event: Event) => {
       const testEvent: TestEvent = {
         type: event.type,
-        timeStamp: event.timeStamp,
+        timeStamp: event.timeStamp || 0,
         charCode: get(event, "charCode", 0),
         keyCode: get(event, "keyCode", 0),
         which: get(event, "which", 0),
