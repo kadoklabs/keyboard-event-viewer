@@ -138,6 +138,7 @@ export const App = memo(() => {
 
   const handleClear = () => {
     setBotEvents([]);
+    setUserEvents([]);
     clearInput();
   };
 
