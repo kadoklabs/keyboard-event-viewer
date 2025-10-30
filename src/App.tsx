@@ -1,6 +1,29 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { Box, Button, Group, MantineProvider, Paper, Stack, Table, TextInput } from "@mantine/core";
+import {
+  Badge,
+  Box,
+  Button,
+  createTheme,
+  Group,
+  MantineProvider,
+  Paper,
+  Stack,
+  Switch,
+  Table,
+  TextInput,
+} from "@mantine/core";
 import { EventRow } from "./EventRow";
+import { get, last } from "lodash-es";
+
+const theme = createTheme({
+  components: {
+    Badge: Badge.extend({
+      defaultProps: {
+        tt: "none",
+      },
+    }),
+  },
+});
 
 const eventTypes: (keyof HTMLElementEventMap)[] = [
   "keydown",
@@ -11,14 +34,87 @@ const eventTypes: (keyof HTMLElementEventMap)[] = [
   "beforematch",
 ];
 
+const modifierKeys = [
+  "Alt",
+  "AltGraph",
+  "CapsLock",
+  "Control",
+  "Fn",
+  "Meta",
+  "NumLock",
+  "ScrollLock",
+  "Shift",
+  "Symbol",
+  "SymbolLock",
+];
+
+export type TestEvent = {
+  type: string;
+  timeStamp: number;
+  charCode: number;
+  keyCode: number;
+  which: number;
+  modifiers: string;
+  key: string;
+  code: string;
+  location: number;
+  repeat: boolean;
+  isComposing: boolean;
+  inputType: string;
+  data: string;
+  delay: number;
+};
+
 export const App = memo(() => {
-  const [events, setEvents] = useState<KeyboardEvent[]>([]);
+  const [botEvents, setBotEvents] = useState<TestEvent[]>([]);
+  const [userEvents, setUserEvents] = useState<TestEvent[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<"bot" | "user">("bot");
 
   useEffect(() => {
     if (!inputRef.current) return;
+
+    console.log("Registering event listeners");
+
     const listener = (event: Event) => {
-      setEvents((prevEvents) => [...prevEvents, event as KeyboardEvent]);
+      const testEvent: TestEvent = {
+        type: event.type,
+        timeStamp: event.timeStamp,
+        charCode: get(event, "charCode", 0),
+        keyCode: get(event, "keyCode", 0),
+        which: get(event, "which", 0),
+        modifiers: "",
+        key: get(event, "key", ""),
+        code: get(event, "code", ""),
+        location: get(event, "location", 0),
+        repeat: get(event, "repeat", false),
+        isComposing: get(event, "isComposing", false),
+        inputType: get(event, "inputType", ""),
+        data: get(event, "data", ""),
+        delay: 0,
+      };
+
+      if (event instanceof KeyboardEvent) {
+        testEvent.modifiers = modifierKeys.filter((key) => event.getModifierState(key)).join(", ");
+      }
+
+      if (mode === "bot") {
+        setBotEvents((prevEvents) => [
+          ...prevEvents,
+          {
+            ...testEvent,
+            delay: prevEvents.length > 0 ? testEvent.timeStamp - last(prevEvents)!.timeStamp : 0,
+          },
+        ]);
+      } else {
+        setUserEvents((prevEvents) => [
+          ...prevEvents,
+          {
+            ...testEvent,
+            delay: prevEvents.length > 0 ? testEvent.timeStamp - last(prevEvents)!.timeStamp : 0,
+          },
+        ]);
+      }
     };
 
     const element = inputRef.current;
@@ -32,33 +128,49 @@ export const App = memo(() => {
         element.removeEventListener(type, listener);
       });
     };
-  }, [inputRef]);
+  }, [inputRef, mode]);
 
-  const handleClear = () => {
-    setEvents([]);
+  const clearInput = () => {
     if (inputRef.current) {
       inputRef.current.value = "";
     }
   };
 
+  const handleClear = () => {
+    setBotEvents([]);
+    clearInput();
+  };
+
+  useEffect(() => {
+    clearInput();
+  }, [mode]);
+
   return (
-    <MantineProvider defaultColorScheme="auto">
+    <MantineProvider defaultColorScheme="auto" theme={theme}>
       <Box p="md">
         <Paper withBorder p="md">
           <Stack>
-            <Group>
+            <Group gap="xs">
               <TextInput id="input" flex={1} placeholder="Type here" ref={inputRef} />
               <Button color="red" onClick={handleClear}>
                 Clear
               </Button>
+              <Switch
+                label={mode === "bot" ? "Bot Mode" : "User Mode"}
+                checked={mode === "bot"}
+                onChange={(event) => {
+                  setMode(event.currentTarget.checked ? "bot" : "user");
+                }}
+              />
             </Group>
 
             <Table striped>
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>#</Table.Th>
-                  <Table.Th>Timestamp</Table.Th>
                   <Table.Th>Type</Table.Th>
+                  <Table.Th>Timestamp</Table.Th>
+                  <Table.Th>Delay</Table.Th>
                   <Table.Th>Char Code</Table.Th>
                   <Table.Th>Key Code</Table.Th>
                   <Table.Th>Which</Table.Th>
@@ -74,8 +186,8 @@ export const App = memo(() => {
               </Table.Thead>
 
               <Table.Tbody>
-                {events.map((event, index) => (
-                  <EventRow key={index} index={index} event={event} />
+                {(mode === "bot" ? botEvents : userEvents).map((event, index) => (
+                  <EventRow key={`${mode}-${index}`} index={index} event={event} userEvent={userEvents[index]} />
                 ))}
               </Table.Tbody>
             </Table>

@@ -1,56 +1,80 @@
-import { Table } from "@mantine/core";
+import { Badge, Group, Table, Text, Tooltip } from "@mantine/core";
 import { memo, useMemo } from "react";
 import { get } from "lodash-es";
+import type { TestEvent } from "./App";
 
 export type EventRowProps = {
   index: number;
-  event: KeyboardEvent;
+  event: TestEvent;
+  userEvent?: TestEvent;
 };
 
-const modifierKeys = [
-  "Alt",
-  "AltGraph",
-  "CapsLock",
-  "Control",
-  "Fn",
-  "Meta",
-  "NumLock",
-  "ScrollLock",
-  "Shift",
-  "Symbol",
-  "SymbolLock",
-];
+const sortedKeys = [
+  "type",
+  "timeStamp",
+  "delay",
+  "charCode",
+  "keyCode",
+  "which",
+  "modifiers",
+  "key",
+  "code",
+  "location",
+  "repeat",
+  "isComposing",
+  "inputType",
+  "data",
+] as (keyof TestEvent)[];
 
-export const EventRow = memo(({ index, event }: EventRowProps) => {
-  const modifiers = useMemo(() => {
-    if (!event.getModifierState) return "";
-    return modifierKeys.filter((key) => event.getModifierState(key)).join(", ");
-  }, [event]);
+export const EventRow = memo(({ index, event, userEvent }: EventRowProps) => {
+  const invalidKeys = useMemo(() => {
+    if (!userEvent) return [];
 
-  const inputType = useMemo(() => {
-    return get(event, "inputType", "");
-  }, [event]);
+    return sortedKeys.filter((key) => {
+      if (key === "timeStamp") return false;
+      if (key === "delay") {
+        return get(userEvent, key) - get(event, key) > 10;
+      }
 
-  const data = useMemo(() => {
-    return get(event, "data", "");
-  }, [event]);
+      return get(event, key) !== get(userEvent, key);
+    });
+  }, [event, userEvent]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const formatEventValue = (key: string, value: any) => {
+    if (["timeStamp", "delay"].includes(key)) return value.toFixed(2);
+
+    return value;
+  };
 
   return (
     <Table.Tr>
       <Table.Td>{index + 1}</Table.Td>
-      <Table.Td>{event.timeStamp.toFixed(2)}</Table.Td>
-      <Table.Td>{event.type}</Table.Td>
-      <Table.Td>{event.charCode}</Table.Td>
-      <Table.Td>{event.keyCode}</Table.Td>
-      <Table.Td>{event.which}</Table.Td>
-      <Table.Td>{modifiers}</Table.Td>
-      <Table.Td>{event.key}</Table.Td>
-      <Table.Td>{event.code}</Table.Td>
-      <Table.Td>{event.location}</Table.Td>
-      <Table.Td>{event.repeat ? "Yes" : "No"}</Table.Td>
-      <Table.Td>{event.isComposing ? "Yes" : "No"}</Table.Td>
-      <Table.Td>{inputType}</Table.Td>
-      <Table.Td>{data}</Table.Td>
+      {sortedKeys.map((key) => {
+        const value = formatEventValue(key, event[key]);
+        const userValue = userEvent ? formatEventValue(key, userEvent[key]) : null;
+
+        return (
+          <Table.Td key={key}>
+            <Tooltip
+              hidden={value === userValue}
+              color="dark"
+              withArrow
+              label={
+                <Group gap="xs">
+                  <Text size="sm">{value}</Text>
+                  <Text c="gray" size="sm">
+                    -
+                  </Text>
+                  <Text size="sm">{userValue}</Text>
+                </Group>
+              }
+            >
+              <Badge color={invalidKeys.includes(key) ? "red" : "gray"}>{value}</Badge>
+            </Tooltip>
+          </Table.Td>
+        );
+      })}
     </Table.Tr>
   );
 });
