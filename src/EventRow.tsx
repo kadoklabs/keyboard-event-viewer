@@ -57,7 +57,10 @@ export const EventRow = memo(({ index, event, userEvent }: EventRowProps) => {
                 </Group>
               }
             >
-              <Badge color={value !== userValue && key !== "timeStamp" ? "red" : "gray"}>{value}</Badge>
+              <Group gap="xs">
+                <Badge color={value !== userValue && key !== "timeStamp" ? "red" : "gray"}>{value}</Badge>
+                {key === "keyCode" && !!value && <Badge color="gray">{String.fromCharCode(Number(value))}</Badge>}
+              </Group>
             </Tooltip>
           </Table.Td>
         );
