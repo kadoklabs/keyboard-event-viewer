@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -9,10 +9,10 @@ import {
   Paper,
   Stack,
   Switch,
+  Table,
   TextInput,
 } from "@mantine/core";
-import { DebouncedInput } from "./DebouncedInput";
-import { EventTable } from "./EventTable";
+import { EventRow } from "./EventRow";
 import { get, last } from "lodash-es";
 
 const theme = createTheme({
@@ -70,7 +70,6 @@ export const App = memo(() => {
   const [userEvents, setUserEvents] = useState<TestEvent[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"bot" | "user">("bot");
-  const [filter, setFilter] = useState("");
 
   useEffect(() => {
     if (!inputRef.current) return;
@@ -131,22 +130,21 @@ export const App = memo(() => {
     };
   }, [inputRef, mode]);
 
-  const clearInput = useCallback(() => {
+  const clearInput = () => {
     if (inputRef.current) {
       inputRef.current.value = "";
     }
-  }, []);
+  };
 
-  const handleClear = useCallback(() => {
+  const handleClear = () => {
     setBotEvents([]);
     setUserEvents([]);
-    setFilter("");
     clearInput();
-  }, [clearInput]);
+  };
 
   useEffect(() => {
     clearInput();
-  }, [mode, clearInput]);
+  }, [mode]);
 
   return (
     <MantineProvider defaultColorScheme="auto" theme={theme}>
@@ -167,19 +165,33 @@ export const App = memo(() => {
               />
             </Group>
 
-            <DebouncedInput
-              value={filter}
-              onChange={setFilter}
-              debounceMs={200}
-              placeholder="Filter events by type, key, code…"
-            />
+            <Table striped>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>#</Table.Th>
+                  <Table.Th>Type</Table.Th>
+                  <Table.Th>Timestamp</Table.Th>
+                  <Table.Th>Delay</Table.Th>
+                  <Table.Th>Char Code</Table.Th>
+                  <Table.Th>Key Code</Table.Th>
+                  <Table.Th>Which</Table.Th>
+                  <Table.Th>Modifiers</Table.Th>
+                  <Table.Th>Key</Table.Th>
+                  <Table.Th>Code</Table.Th>
+                  <Table.Th>Location</Table.Th>
+                  <Table.Th>Repeat</Table.Th>
+                  <Table.Th>Composing</Table.Th>
+                  <Table.Th>Input Type</Table.Th>
+                  <Table.Th>Data</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
 
-            <EventTable
-              events={mode === "bot" ? botEvents : userEvents}
-              userEvents={userEvents}
-              mode={mode}
-              filter={filter}
-            />
+              <Table.Tbody>
+                {(mode === "bot" ? botEvents : userEvents).map((event, index) => (
+                  <EventRow key={`${mode}-${index}`} index={index} event={event} userEvent={userEvents[index]} />
+                ))}
+              </Table.Tbody>
+            </Table>
           </Stack>
         </Paper>
       </Box>
