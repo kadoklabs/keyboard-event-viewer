@@ -101,6 +101,25 @@
 		clearInput();
 	}
 
+	function handleExport() {
+		const payload = {
+			botEvents,
+			userEvents,
+		};
+		const blob = new Blob([JSON.stringify(payload, null, 2)], {
+			type: "application/json",
+		});
+		const url = URL.createObjectURL(blob);
+		const anchor = document.createElement("a");
+
+		anchor.href = url;
+		anchor.download = "keyboard-events.json";
+		document.body.appendChild(anchor);
+		anchor.click();
+		anchor.remove();
+		URL.revokeObjectURL(url);
+	}
+
 	function handleKeydown(event: Event) {
 		handleEvent(event);
 	}
@@ -127,6 +146,7 @@
 	});
 
 	let currentEvents = $derived(mode === "bot" ? botEvents : userEvents);
+	let hasEvents = $derived(botEvents.length > 0 || userEvents.length > 0);
 </script>
 
 <div class="min-h-screen bg-background p-4">
@@ -148,6 +168,7 @@
 					onbeforematch={handleBeforematch}
 				/>
 				<Button variant="destructive" onclick={handleClear}>Clear</Button>
+				<Button variant="outline" onclick={handleExport} disabled={!hasEvents}>Export JSON</Button>
 				<ToggleGroup
 					type="single"
 					value={mode}
